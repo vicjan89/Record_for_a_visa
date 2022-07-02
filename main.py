@@ -1,6 +1,7 @@
-from pyautogui import alert, position, click, hotkey, prompt, ImageNotFoundException, locateCenterOnScreen, write, press
+from pyautogui import alert, position, click, hotkey, prompt, locateOnScreen, locateCenterOnScreen, write, press
 import pyautogui
 import pyperclip
+from PIL import Image
 import playsound
 from time import sleep
 from datetime import datetime, timedelta
@@ -22,6 +23,7 @@ class Find_visa:
     SELECT_FIND_VISA = 3
     FIND_VISA = 4
     ENTER_ADDRESS = 5
+    THERE_ARE_PLACES = 6
     LOG = 'my.log'
 
     def __init__(self, name_file, address):
@@ -80,38 +82,25 @@ class Find_visa:
     def find_visa(self):
         sleep(5)
         pyautogui.FAILSAFE = True
-        self.wait_dawnload()
-        step = int((self.coords['last_center'][0][1]-self.coords['first_center'][0][1])/(self.coords['num_centers']-1))
-        stop = False
-        while True:
-            for i in range(self.coords['first_center'][0][1], self.coords['last_center'][0][1], step):
-                click(self.coords['select_center'][0])  # выбор визового центра
+        run = True
+        while run:
+            for i in range(1,13):
+                x,y = locateCenterOnScreen('static/select_city_check.png')
+                click(x + 250, y)  # выбор визового центра
                 sleep(2)
-                click(self.coords['first_center'][0][0], i)  # нажимаем на визовый центр
-                self.wait_dawnload()
-                hotkey('ctrl', 'a')
-                sleep(1)
-                hotkey('ctrl', 'c')
-                buffer = pyperclip.paste()
-                if 'no open seats' in buffer:
-                    text_to_log = buffer.split('Centre')
-                    text_to_log = text_to_log[1].split('Appointment Category')
-                    text_to_log = text_to_log[0]
-                    print(datetime.now(), text_to_log, file=self.log)
-                elif 'Нет доступных мест' in buffer:
-                    text_to_log = buffer.split('Нет доступных мест в выбранном Визовом Центре')
-                    text_to_log = text_to_log[1].split('Категория Записи')
-                    text_to_log = text_to_log[0]
-                    print(datetime.now(), 'Нет доступных мест в выбранном Визовом Центре' + text_to_log[:-2], file=self.log)
+                click(locateCenterOnScreen('static/' + str(i) + '.png'))  # нажимаем на визовый центр
+                sleep(3)
+                if locateOnScreen('static/no_sits.png'):
+                    print(datetime.now(), 'Нет мест в центре ' + str(i), file=self.log)
                 else:
-                    stop = True
-            if stop:
-                break
-            for i in tqdm(range(300)):
-                sleep(1)
+                    run = False
+                    self.status = self.THERE_ARE_PLACES
+                    break
+            if run:
+                for i in tqdm(range(600)):
+                    sleep(1)
 
     def check_status(self):
-        self.wait_dawnload()
         click(50, 300)
         sleep(2)
         hotkey('ctrl', 'a')
@@ -121,11 +110,13 @@ class Find_visa:
         click(50, 300)
         if 'You are now in line' in s:
             self.status = self.NOT_WORK
-        elif 'Apply for VISA' in s or 'Подача документов на визу' in s:
-            if 'Select Centre' in s or 'Выбрать город' in s:
-                self.status = self.FIND_VISA
+        elif locateOnScreen('static/select_sity.png'):
+            if self.status == self.THERE_ARE_PLACES:
+                playsound.playsound('signal-gorna-na-obed.mp3')
             else:
-                self.status = self.SELECT_FIND_VISA
+                self.status = self.FIND_VISA
+        elif locateOnScreen('static/schedule_appointment_rus.png'):
+            self.status = self.SELECT_FIND_VISA
         elif 'Электронная почта' in s:
             self.status = self.AUTORIZATION
         elif 'Invalid session. Kindly logout and click appointment click from vfsglobal.com site' in s or (
@@ -154,9 +145,9 @@ class Find_visa:
                 print(datetime.now(), 'Не нашёл пункт меню "Запись на подачу документов".', self.log)
         sleep(5)
 
-
     def enter_address(self):
         click(self.coords['address_box'][0])
+        print(self.address)
         write(self.address)
         sleep(3)
         press('enter')
@@ -174,26 +165,31 @@ class Find_visa:
                         self.enter_address()
                         print(datetime.now(), 'Адреса сайта введён.', file=self.log)
                     case self.NOT_WORK:
-                        playsound.playsound('signal-gorna-na-obed.mp3', True)
                         print(datetime.now(), 'Сайт ожидает очереди.', file=self.log)
                         self.wait_site_work()
                         print(datetime.now(), 'Очередь подошла.', file=self.log)
                     case self.AUTORIZATION:
-                        playsound.playsound('signal-gorna-na-obed.mp3', True)
                         print(datetime.now(), 'Авторизация.', file=self.log)
                         self.autorization()
                         print(datetime.now(), 'Конец авторизации.', file=self.log)
                     case self.FIND_VISA:
-                        playsound.playsound('signal-gorna-na-obed.mp3', True)
                         print(datetime.now(), 'Начало поиска визового центра со свободными местами.', file=self.log)
                         self.find_visa()
                         print(datetime.now(), 'Конец поиска визового центра со свободными местами.', file=self.log)
                     case self.SELECT_FIND_VISA:
-                        playsound.playsound('signal-gorna-na-obed.mp3', True)
                         print(datetime.now(), 'Выбор меню поиска визового центра.', file=self.log)
                         self.select_find_visa()
                         print(datetime.now(), 'Выбрано меню поиска визового центра.', file=self.log)
 
+def split_image(image_name, num):
+    image = Image.open(image_name)
+    size_image = image.size
+    step = int(size_image[1]/num)
+    name = 1
+    for i in range(0, size_image[1], step):
+        image_new = image.crop((0,i,size_image[0],i+step))
+        image_new.save('static/' + str(name) + '.png')
+        name += 1
 
 
 fv = Find_visa('Coordinates', ADDRESS)
