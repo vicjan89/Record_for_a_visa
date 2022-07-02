@@ -159,24 +159,23 @@ class Find_visa:
             run = True
             while run:
                 self.check_status()
-                match self.status:
-                    case self.ENTER_ADDRESS:
+                if self.status == self.ENTER_ADDRESS:
                         print(datetime.now(), 'Ввод адреса сайта.', self.address, file=self.log)
                         self.enter_address()
                         print(datetime.now(), 'Адреса сайта введён.', file=self.log)
-                    case self.NOT_WORK:
+                elif self.status == self.NOT_WORK:
                         print(datetime.now(), 'Сайт ожидает очереди.', file=self.log)
                         self.wait_site_work()
                         print(datetime.now(), 'Очередь подошла.', file=self.log)
-                    case self.AUTORIZATION:
+                elif self.status == self.AUTORIZATION:
                         print(datetime.now(), 'Авторизация.', file=self.log)
                         self.autorization()
                         print(datetime.now(), 'Конец авторизации.', file=self.log)
-                    case self.FIND_VISA:
+                elif self.status == self.FIND_VISA:
                         print(datetime.now(), 'Начало поиска визового центра со свободными местами.', file=self.log)
                         self.find_visa()
                         print(datetime.now(), 'Конец поиска визового центра со свободными местами.', file=self.log)
-                    case self.SELECT_FIND_VISA:
+                elif self.status == self.SELECT_FIND_VISA:
                         print(datetime.now(), 'Выбор меню поиска визового центра.', file=self.log)
                         self.select_find_visa()
                         print(datetime.now(), 'Выбрано меню поиска визового центра.', file=self.log)
