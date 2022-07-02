@@ -28,7 +28,7 @@ class Find_visa:
 
     def __init__(self, name_file, address):
         self.name_file = name_file
-        self.status = 0
+        self.status = None
         self.address = address
 
     def calibrate_and_save(self):
@@ -78,6 +78,7 @@ class Find_visa:
             s = pyperclip.paste()
             if 'Your estimated wait time' not in s:
                 run = False
+        self.status = None
 
     def find_visa(self):
         sleep(5)
@@ -93,37 +94,39 @@ class Find_visa:
                 if locateOnScreen('static/no_sits.png'):
                     print(datetime.now(), 'Нет мест в центре ' + str(i), file=self.log)
                 else:
+                    click(locateCenterOnScreen('static/select_record_category.png'))
+                    if locateOnScreen('static/select_record_category.png'):
+                        self.status = self.ENTER_ADDRESS
+                    else:
+                        self.status = self.THERE_ARE_PLACES
                     run = False
-                    self.status = self.THERE_ARE_PLACES
                     break
             if run:
                 for i in tqdm(range(600)):
                     sleep(1)
 
     def check_status(self):
-        click(50, 300)
-        sleep(2)
-        hotkey('ctrl', 'a')
-        sleep(2)
-        hotkey('ctrl', 'c')
-        s = pyperclip.paste()
-        click(50, 300)
-        if 'You are now in line' in s:
-            self.status = self.NOT_WORK
-        elif locateOnScreen('static/select_sity.png'):
-            if self.status == self.THERE_ARE_PLACES:
-                playsound.playsound('signal-gorna-na-obed.mp3')
-            else:
+        if self.status == None:
+            click(50, 300)
+            sleep(2)
+            hotkey('ctrl', 'a')
+            sleep(2)
+            hotkey('ctrl', 'c')
+            s = pyperclip.paste()
+            click(50, 300)
+            if 'You are now in line' in s:
+                self.status = self.NOT_WORK
+            elif locateOnScreen('static/select_sity.png'):
                 self.status = self.FIND_VISA
-        elif locateOnScreen('static/schedule_appointment_rus.png'):
-            self.status = self.SELECT_FIND_VISA
-        elif 'Электронная почта' in s:
-            self.status = self.AUTORIZATION
-        elif 'Invalid session. Kindly logout and click appointment click from vfsglobal.com site' in s or (
-            'Please visit https://www.vfsglobal.com/ site then select -> Visiting Country' in s):
-            self.status = self.ENTER_ADDRESS
-        else:
-            self.status = self.ENTER_ADDRESS
+            elif locateOnScreen('static/schedule_appointment_rus.png'):
+                self.status = self.SELECT_FIND_VISA
+            elif 'Электронная почта' in s:
+                self.status = self.AUTORIZATION
+            elif 'Invalid session. Kindly logout and click appointment click from vfsglobal.com site' in s or (
+                'Please visit https://www.vfsglobal.com/ site then select -> Visiting Country' in s):
+                self.status = self.ENTER_ADDRESS
+            else:
+                self.status = self.ENTER_ADDRESS
 
     def autorization(self):
         sleep(2)
@@ -131,6 +134,7 @@ class Find_visa:
         sleep(5)
         click(locateCenterOnScreen('static/next.png'))
         sleep(5)
+        self.status = None
 
     def select_find_visa(self):
         sleep(5)
@@ -144,14 +148,15 @@ class Find_visa:
             else:
                 print(datetime.now(), 'Не нашёл пункт меню "Запись на подачу документов".', self.log)
         sleep(5)
+        self.status = None
 
     def enter_address(self):
-        click(self.coords['address_box'][0])
-        print(self.address)
+        click(self.coords['address_box'][0], clicks=3)
         write(self.address)
         sleep(3)
         press('enter')
         sleep(7)
+        self.status = None
 
     def run(self):
         sleep(5)
@@ -162,7 +167,7 @@ class Find_visa:
                 if self.status == self.ENTER_ADDRESS:
                         print(datetime.now(), 'Ввод адреса сайта.', self.address, file=self.log)
                         self.enter_address()
-                        print(datetime.now(), 'Адреса сайта введён.', file=self.log)
+                        print(datetime.now(), 'Адрес сайта введён.', file=self.log)
                 elif self.status == self.NOT_WORK:
                         print(datetime.now(), 'Сайт ожидает очереди.', file=self.log)
                         self.wait_site_work()
@@ -179,6 +184,9 @@ class Find_visa:
                         print(datetime.now(), 'Выбор меню поиска визового центра.', file=self.log)
                         self.select_find_visa()
                         print(datetime.now(), 'Выбрано меню поиска визового центра.', file=self.log)
+                elif self.status == self.THERE_ARE_PLACES:
+                    playsound.playsound('signal-gorna-na-obed.mp3')
+
 
 def split_image(image_name, num):
     image = Image.open(image_name)
