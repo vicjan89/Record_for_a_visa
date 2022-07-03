@@ -1,4 +1,4 @@
-from pyautogui import alert, position, click, hotkey, prompt, locateOnScreen, locateCenterOnScreen, write, press
+from pyautogui import click, hotkey, locateOnScreen, locateCenterOnScreen, write, press, moveTo
 import pyautogui
 import pyperclip
 from PIL import Image
@@ -8,13 +8,10 @@ from datetime import datetime, timedelta
 import smtplib
 import os
 from tqdm import tqdm
-import json
+from dotenv import load_dotenv
 
-EMAIL_FROM = os.getenv('EMAIL_FROM')
-PASSWORD_FROM = os.getenv('PASSWORD_FROM')
-EMAIL_TO = os.getenv('EMAIL_TO')
 ADDRESS = 'https://row2.vfsglobal.com/PolandBelarus-Appointment/Account/RegisteredLogin?q=shSA0YnE4pLF9Xzwon/x/ASnHZRMROGDyz5YljrTPrmD7weWKDzHm/9+x4kyou3TsMOg99oc+0bfYTDhNi8VXO2A4zs7wBkyB6b15tURU2eT0aS3CJYjFGR6LRWzfcsZ5BzitruEIjN+SeHc17EKqO0YlhR3T0Pc1cO5uD69/WY='
-
+pyautogui.FAILSAFE = True
 
 class Find_visa:
 
@@ -24,6 +21,8 @@ class Find_visa:
     FIND_VISA = 4
     ENTER_ADDRESS = 5
     THERE_ARE_PLACES = 6
+    STOP = 7
+
     LOG = 'my.log'
 
     def __init__(self, name_file, address):
@@ -31,27 +30,17 @@ class Find_visa:
         self.status = None
         self.address = address
 
-    def calibrate_and_save(self):
-        title = 'Калибровка сайта'
-        alert(text='Начинается сохранение координат полей и надписей сайта. После наведения на запрошиваемый объект нажимайте на клавиатуре Ввод/Enter')
-        for value in self.coords.values():
-            if not isinstance(value, int):
-                alert(text=value[1], title=title, button='Ok')
-                value[0] = position()
-        self.coords['num_centers'] = int(prompt(text='Введите количество визовых центров', title=title))
-        with open(self.name_file + '.json', 'w', encoding='utf-8') as file:
-            json.dump(self.coords, file, indent=4, ensure_ascii=False)
-
-    def load_calibration(self):
-        with open(self.name_file + '.json', 'r', encoding='utf-8') as file:
-            self.coords = json.load(file)
-
     def send_email(self):
-        smtpObj = smtplib.SMTP('smtp.gmail.com', 587)
-        smtpObj.starttls()
-        smtpObj.login(EMAIL_FROM, PASSWORD_FROM)
-        smtpObj.sendmail(EMAIL_FROM, EMAIL_TO, 'Hooray! There are places for a visa!')
-        smtpObj.quit()
+        load_dotenv('config.env')
+        EMAIL_FROM = os.getenv('EMAIL_FROM')
+        PASSWORD_FROM = os.getenv('PASSWORD_FROM')
+        EMAIL_TO = os.getenv('EMAIL_TO')
+        if EMAIL_FROM and PASSWORD_FROM and EMAIL_TO:
+            smtpObj = smtplib.SMTP('smtp.gmail.com', 587)
+            smtpObj.starttls()
+            smtpObj.login(EMAIL_FROM, PASSWORD_FROM)
+            smtpObj.sendmail(EMAIL_FROM, EMAIL_TO, 'Hooray! There are places for a visa!')
+            smtpObj.quit()
 
     def wait_dawnload(self):
         s = ''
@@ -81,21 +70,36 @@ class Find_visa:
         self.status = None
 
     def find_visa(self):
-        sleep(5)
-        pyautogui.FAILSAFE = True
+        def count_locate(image):
+            count = 0
+            for i in range(3):
+                if locateOnScreen(image):
+                    sleep(1)
+                    count += 1
+            return count
+        sleep(1)
         run = True
         while run:
-            for i in range(1,13):
-                x,y = locateCenterOnScreen('static/select_city_check.png')
-                click(x + 250, y)  # выбор визового центра
-                sleep(2)
+            for i in range(1,14):
+                coords = None
+                while not coords:
+                    coords = locateCenterOnScreen('static/select_city_check.png')
+                click(coords.x + 250, coords.y-7)  # выбор визового центра
+                sleep(1)
                 click(locateCenterOnScreen('static/' + str(i) + '.png'))  # нажимаем на визовый центр
-                sleep(3)
-                if locateOnScreen('static/no_sits.png'):
+                sleep(2)
+                if count_locate('static/no_sits.png') or count_locate('static/no_sits_eng.png'):
                     print(datetime.now(), 'Нет мест в центре ' + str(i), file=self.log)
                 else:
-                    click(locateCenterOnScreen('static/select_record_category.png'))
+                    print(datetime.now(), 'Пробую выбрать категорию визы', file=self.log)
+                    coords = None
+                    while not coords:
+                        coords = locateCenterOnScreen('static/select_record_category.png')
+                    click(coords.x, coords.y - 23)
+                    moveTo(0,200)
+                    sleep(1)
                     if locateOnScreen('static/select_record_category.png'):
+                        print(datetime.now(), 'Похоже сайт не работает.', file=self.log)
                         self.status = self.ENTER_ADDRESS
                     else:
                         self.status = self.THERE_ARE_PLACES
@@ -151,12 +155,20 @@ class Find_visa:
         self.status = None
 
     def enter_address(self):
-        click(self.coords['address_box'][0], clicks=3)
+        click(472, 62, clicks=3)
         write(self.address)
         sleep(3)
         press('enter')
         sleep(7)
         self.status = None
+
+    def record_for_visa(self):
+        click(locateCenterOnScreen('static/select_record_category.png'))
+        sleep(1)
+        pyautogui.screenshot('my_screenshot.png')
+        self.status = None
+        if input('>') == 'q':
+            self.status = self.STOP
 
     def run(self):
         sleep(5)
@@ -164,7 +176,9 @@ class Find_visa:
             run = True
             while run:
                 self.check_status()
-                if self.status == self.ENTER_ADDRESS:
+                if self.status == self.STOP:
+                    break
+                elif self.status == self.ENTER_ADDRESS:
                         print(datetime.now(), 'Ввод адреса сайта.', self.address, file=self.log)
                         self.enter_address()
                         print(datetime.now(), 'Адрес сайта введён.', file=self.log)
@@ -185,7 +199,10 @@ class Find_visa:
                         self.select_find_visa()
                         print(datetime.now(), 'Выбрано меню поиска визового центра.', file=self.log)
                 elif self.status == self.THERE_ARE_PLACES:
+                    print(datetime.now(), 'Есть свободные места. Начало записи на подачу документов.', file=self.log)
                     playsound.playsound('signal-gorna-na-obed.mp3')
+                    self.send_email()
+                    self.record_for_visa()
 
 
 def split_image(image_name, num):
@@ -198,8 +215,10 @@ def split_image(image_name, num):
         image_new.save('static/' + str(name) + '.png')
         name += 1
 
-
-fv = Find_visa('Coordinates', ADDRESS)
-fv.load_calibration()
-fv.run()
+try:
+    fv = Find_visa('Coordinates', ADDRESS)
+    fv.run()
+except Exception as e:
+    playsound.playsound('signal-gorna-na-obed.mp3')
+    print(e)
 
