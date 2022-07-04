@@ -1,4 +1,4 @@
-from pyautogui import click, hotkey, locateOnScreen, locateCenterOnScreen, write, press, moveTo
+from pyautogui import click, hotkey, locateOnScreen, locateCenterOnScreen, typewrite, press, moveTo
 import pyautogui
 import pyperclip
 from PIL import Image
@@ -145,7 +145,7 @@ class Find_visa:
     def enter_address(self):
         click(472, 62, clicks=3)
         print(self.address, file=self.log)
-        write('https://row2.vfsglobal.com/PolandBelarus-Appointment/Account/RegisteredLogin?q=shSA0YnE4pLF9Xzwon/x/ASnHZRMROGDyz5YljrTPrmD7weWKDzHm/9+x4kyou3TsMOg99oc+0bfYTDhNi8VXO2A4zs7wBkyB6b15tURU2eT0aS3CJYjFGR6LRWzfcsZ5BzitruEIjN+SeHc17EKqO0YlhR3T0Pc1cO5uD69/WY=')
+        typewrite(r'https://row2.vfsglobal.com/PolandBelarus-Appointment/Account/RegisteredLogin?q=shSA0YnE4pLF9Xzwon/x/ASnHZRMROGDyz5YljrTPrmD7weWKDzHm/9+x4kyou3TsMOg99oc+0bfYTDhNi8VXO2A4zs7wBkyB6b15tURU2eT0aS3CJYjFGR6LRWzfcsZ5BzitruEIjN+SeHc17EKqO0YlhR3T0Pc1cO5uD69/WY=')
         sleep(3)
         press('enter')
         self.status = None
