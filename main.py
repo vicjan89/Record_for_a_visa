@@ -30,6 +30,17 @@ class Find_visa:
         self.status = None
         self.address = address
 
+    @staticmethod
+    def wait_element(element, time_wait):
+        '''Ожидание появления на экране элемента element. Если за time_wait секунд не появился то возвращает None'''
+        coords = None
+        start = datetime.now()
+        while not coords:
+            coords = locateCenterOnScreen(element)
+            if (datetime.now() - start) > timedelta(seconds=time_wait):
+                break
+        return coords
+
     def send_email(self):
         load_dotenv('config.env')
         EMAIL_FROM = os.getenv('EMAIL_FROM')
@@ -41,19 +52,6 @@ class Find_visa:
             smtpObj.login(EMAIL_FROM, PASSWORD_FROM)
             smtpObj.sendmail(EMAIL_FROM, EMAIL_TO, 'Hooray! There are places for a visa!')
             smtpObj.quit()
-
-    def wait_dawnload(self):
-        s = ''
-        t = datetime.now()
-        while s == '':
-            click(50,300)
-            hotkey('ctrl', 'a')
-            sleep(1)
-            hotkey('ctrl', 'c')
-            s = pyperclip.paste()
-            click(50, 300)
-            if (datetime.now()-t) > timedelta(minutes=5):
-                break
 
     def wait_site_work(self):
         sleep(5)
@@ -70,47 +68,38 @@ class Find_visa:
         self.status = None
 
     def find_visa(self):
-        def count_locate(image):
-            count = 0
-            for i in range(3):
-                if locateOnScreen(image):
-                    sleep(1)
-                    count += 1
-            return count
-        sleep(1)
+
         run = True
         while run:
             for i in range(1,14):
-                coords = None
-                while not coords:
-                    coords = locateCenterOnScreen('static/select_city_check.png')
-                click(coords.x + 250, coords.y-7)  # выбор визового центра
-                sleep(1)
-                click(locateCenterOnScreen('static/' + str(i) + '.png'))  # нажимаем на визовый центр
-                sleep(2)
-                if count_locate('static/no_sits.png') or count_locate('static/no_sits_eng.png'):
+                coords = self.wait_element('static/select_city_check.png', 300)
+                if coords:
+                    click(coords.x + 250, coords.y-7)  # выбор визового центра
+                coords = self.wait_element('static/' + str(i) + '.png',300)
+                if coords:
+                    click(coords)  # нажимаем на визовый центр
+                if self.wait_element('static/no_sits.png', 10) or self.wait_element('static/no_sits_eng.png', 5):
                     print(datetime.now(), 'Нет мест в центре ' + str(i), file=self.log)
                 else:
                     print(datetime.now(), 'Пробую выбрать категорию визы', file=self.log)
-                    coords = None
-                    while not coords:
-                        coords = locateCenterOnScreen('static/select_record_category.png')
-                    click(coords.x, coords.y - 23)
-                    moveTo(0,200)
-                    sleep(1)
-                    if locateOnScreen('static/select_record_category.png'):
-                        print(datetime.now(), 'Похоже сайт не работает.', file=self.log)
-                        self.status = self.ENTER_ADDRESS
-                    else:
-                        self.status = self.THERE_ARE_PLACES
-                    run = False
-                    break
+                    coords = self.wait_element('static/select_record_category.png',5)
+                    if coords:
+                        click(coords.x, coords.y - 23)
+                        moveTo(0,200)
+                        if self.wait_element('static/select_record_category.png',10):
+                            print(datetime.now(), 'Похоже сайт не работает.', file=self.log)
+                            self.status = self.ENTER_ADDRESS
+                        else:
+                            self.status = self.THERE_ARE_PLACES
+                        run = False
+                        break
             if run:
                 for i in tqdm(range(600)):
                     sleep(1)
 
     def check_status(self):
         if self.status == None:
+            sleep(5)
             click(50, 300)
             sleep(2)
             hotkey('ctrl', 'a')
@@ -133,33 +122,32 @@ class Find_visa:
                 self.status = self.ENTER_ADDRESS
 
     def autorization(self):
-        sleep(2)
-        click(locateCenterOnScreen('static/capcha.png'))
+        coords = self.wait_element('static/capcha.png', 10)
+        if coords:
+            click(coords)
         sleep(5)
         click(locateCenterOnScreen('static/next.png'))
         sleep(5)
         self.status = None
 
     def select_find_visa(self):
-        sleep(5)
-        coords = locateCenterOnScreen('static/schedule_appointment.png')
-        if coords != None:
+        coords = self.wait_element('static/schedule_appointment.png', 10)
+        if coords:
             click(coords)
         else:
-            coords = locateCenterOnScreen('static/schedule_appointment_rus.png')
-            if coords != None:
+            coords = self.wait_element('static/schedule_appointment_rus.png', 10)
+            if coords:
                 click(coords)
             else:
                 print(datetime.now(), 'Не нашёл пункт меню "Запись на подачу документов".', self.log)
-        sleep(5)
         self.status = None
 
     def enter_address(self):
         click(472, 62, clicks=3)
-        write(self.address)
+        print(self.address, file=self.log)
+        write('https://row2.vfsglobal.com/PolandBelarus-Appointment/Account/RegisteredLogin?q=shSA0YnE4pLF9Xzwon/x/ASnHZRMROGDyz5YljrTPrmD7weWKDzHm/9+x4kyou3TsMOg99oc+0bfYTDhNi8VXO2A4zs7wBkyB6b15tURU2eT0aS3CJYjFGR6LRWzfcsZ5BzitruEIjN+SeHc17EKqO0YlhR3T0Pc1cO5uD69/WY=')
         sleep(3)
         press('enter')
-        sleep(7)
         self.status = None
 
     def record_for_visa(self):
