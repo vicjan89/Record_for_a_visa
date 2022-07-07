@@ -22,6 +22,7 @@ class Find_visa:
     ENTER_ADDRESS = 5
     THERE_ARE_PLACES = 6
     STOP = 7
+    SCROLL_AUTORIZATION = 8
 
     LOG = 'my.log'
 
@@ -31,15 +32,32 @@ class Find_visa:
         self.address = address
 
     @staticmethod
-    def wait_element(element, time_wait):
+    def wait_element(element, time_wait, region=None):
         '''Ожидание появления на экране элемента element. Если за time_wait секунд не появился то возвращает None'''
         coords = None
         start = datetime.now()
         while not coords:
-            coords = locateCenterOnScreen(element)
+            coords = locateCenterOnScreen(element, region=region)
             if (datetime.now() - start) > timedelta(seconds=time_wait):
                 break
         return coords
+
+    @staticmethod
+    def check_text(text, time_wait):
+        start = datetime.now()
+        while (datetime.now() - start) < timedelta(seconds=time_wait):
+            click(50,200)
+            hotkey('ctrl', 'a')
+            hotkey('ctrl', 'c')
+            s = pyperclip.paste()
+            click(50, 200)
+            if text in s:
+                return True
+        return False
+
+    def logging(self, text):
+        print(datetime.now(), text)
+        print(datetime.now(), text, file=self.log)
 
     def send_email(self):
         load_dotenv('config.env')
@@ -67,93 +85,160 @@ class Find_visa:
                 run = False
         self.status = None
 
-    def find_visa(self):
-
+    def find_visa(self, list_sity):
         run = True
         while run:
-            for i in range(1,14):
-                coords = self.wait_element('static/select_city_check.png', 300)
+            for i in list_sity:
+                self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
+                coords = self.wait_element('static/select_city_check.png', 30, region=(350,450,200,200))
                 if coords:
                     click(coords.x + 250, coords.y-7)  # выбор визового центра
+                else:
+                    self.status = None
+                    run = False
+                    break
                 coords = self.wait_element('static/' + str(i) + '.png',300)
                 if coords:
                     click(coords)  # нажимаем на визовый центр
-                if self.wait_element('static/no_sits.png', 10) or self.wait_element('static/no_sits_eng.png', 5):
-                    print(datetime.now(), 'Нет мест в центре ' + str(i), file=self.log)
+                self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
+                if self.check_text('Нет доступных мест', 1):
+                    self.logging('Нет мест в центре ' + str(i))
                 else:
-                    print(datetime.now(), 'Пробую выбрать категорию визы', file=self.log)
-                    coords = self.wait_element('static/select_record_category.png',5)
+                    self.logging('Пробую выбрать категорию визы')
+                    coords = self.wait_element('static/category_record.png',5, region=(400, 420, 300,230))
                     if coords:
-                        click(coords.x, coords.y - 23)
+                        click(coords.x + 300, coords.y)
                         moveTo(0,200)
-                        if self.wait_element('static/select_record_category.png',10):
-                            print(datetime.now(), 'Похоже сайт не работает.', file=self.log)
-                            self.status = self.ENTER_ADDRESS
-                        else:
-                            self.status = self.THERE_ARE_PLACES
+                    if self.wait_element('static/select_record_category.png',5, region=(420, 320, 730,330)):
+                        self.logging('Похоже сайт не работает.')
+                        self.status = self.ENTER_ADDRESS
                         run = False
                         break
+                    coords = self.wait_element('static/karta_polaka_visa_D.png', 3, region=(600, 550, 350,210))
+                    if coords:
+                        click(coords)
+                        self.logging('Выбираю визу D по карте поляка.')
+                        click(locateCenterOnScreen('static/next.png'))
+                        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
+                        if self.check_text('Нет доступных мест', 1):
+                            self.logging('Нет мест в центре ' + str(i))
+                        else:
+                            self.status = self.THERE_ARE_PLACES
+                            run = False
+                            break
+                    click(50,200)
+                    coords = self.wait_element('static/category_record.png', 5, region=(400, 420, 300, 230))
+                    if coords:
+                        click(coords.x + 300, coords.y)
+                        moveTo(0, 200)
+                    coords = self.wait_element('static/nacional_visa_D.png', 3, region=(600, 550, 350,210))
+                    if coords:
+                        click(coords)
+                        self.logging('Выбираю визу D национальную.')
+                        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
+                        click(locateCenterOnScreen('static/next.png'))
+                        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
+                        if self.check_text('Нет доступных мест', 1):
+                            self.logging('Нет мест в центре ' + str(i))
+                        else:
+                            self.status = self.THERE_ARE_PLACES
+                            run = False
+                            break
+                    click(50, 200)
+                    coords = self.wait_element('static/category_record.png', 5, region=(400, 420, 300, 230))
+                    if coords:
+                        click(coords.x + 300, coords.y)
+                        moveTo(0, 200)
+                    coords = self.wait_element('static/courier_visa_D.png', 3, region=(600, 550, 350,210))
+                    if coords:
+                        click(coords)
+                        self.logging('Выбираю курьера на визу D')
+                        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
+                        click(locateCenterOnScreen('static/next.png'))
+                        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
+                        if self.check_text('Нет доступных мест', 1):
+                            self.logging('Нет мест в центре ' + str(i))
+                        else:
+                            if self.check_text('доступных мест нет', 10):
+                                self.logging('Нет мест в центре ' + str(i))
+                            else:
+                                self.status = self.THERE_ARE_PLACES
+                                run = False
+                                break
+                click(locateCenterOnScreen('static/next.png'))
+                self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
             if run:
-                for i in tqdm(range(600)):
+                for i in tqdm(range(400)):
                     sleep(1)
 
     def check_status(self):
+        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
         if self.status == None:
-            sleep(5)
-            click(50, 300)
-            sleep(2)
-            hotkey('ctrl', 'a')
-            sleep(2)
-            hotkey('ctrl', 'c')
-            s = pyperclip.paste()
-            click(50, 300)
-            if 'You are now in line' in s:
-                self.status = self.NOT_WORK
-            elif locateOnScreen('static/select_sity.png'):
-                self.status = self.FIND_VISA
-            elif locateOnScreen('static/schedule_appointment_rus.png'):
-                self.status = self.SELECT_FIND_VISA
-            elif 'Электронная почта' in s:
-                self.status = self.AUTORIZATION
-            elif 'Invalid session. Kindly logout and click appointment click from vfsglobal.com site' in s or (
-                'Please visit https://www.vfsglobal.com/ site then select -> Visiting Country' in s):
-                self.status = self.ENTER_ADDRESS
+            start = datetime.now()
+            while (datetime.now() - start) < timedelta(seconds=30):
+                click(50,200)
+                hotkey('ctrl', 'a')
+                hotkey('ctrl', 'c')
+                s = pyperclip.paste()
+                if 'Выбрать город' in s:
+                    self.logging('Выбран статус поиска визы.')
+                    self.status = self.FIND_VISA
+                    break
+                elif 'Запись на подачу документов' in s:
+                    self.logging('Выбираем "Запись на подачу документов."')
+                    self.status = self.SELECT_FIND_VISA
+                    break
+                elif 'Назначить дату подачи документов' in s:
+                    self.logging('Нажимаем капчу')
+                    self.status = self.AUTORIZATION
+                    break
+                elif 'You are now in line' in s:
+                    self.status = self.NOT_WORK
+                    break
+                elif 'Инструкция' in s:
+                    self.status = self.SCROLL_AUTORIZATION
             else:
                 self.status = self.ENTER_ADDRESS
+            click(50, 200)
 
     def autorization(self):
-        coords = self.wait_element('static/capcha.png', 10)
+        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
+        coords = self.wait_element('static/capcha.png', 10, region=(350, 450, 200, 200))
         if coords:
             click(coords)
         sleep(5)
         click(locateCenterOnScreen('static/next.png'))
         sleep(5)
         self.status = None
+        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
 
     def select_find_visa(self):
-        coords = self.wait_element('static/schedule_appointment.png', 10)
+        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
+        coords = self.wait_element('static/schedule_appointment_rus.png', 10, region=(170, 240, 300, 160))
         if coords:
             click(coords)
         else:
-            coords = self.wait_element('static/schedule_appointment_rus.png', 10)
+            coords = self.wait_element('static/schedule_appointment.png', 10, region=(170, 240, 300, 160))
             if coords:
                 click(coords)
             else:
-                print(datetime.now(), 'Не нашёл пункт меню "Запись на подачу документов".', self.log)
+                self.logging('Не нашёл пункт меню "Запись на подачу документов".')
+        sleep(5)
         self.status = None
 
     def enter_address(self):
         click(472, 62, clicks=3)
-        print(self.address, file=self.log)
+        self.logging(self.address)
         typewrite(r'https://row2.vfsglobal.com/PolandBelarus-Appointment/Account/RegisteredLogin?q=shSA0YnE4pLF9Xzwon/x/ASnHZRMROGDyz5YljrTPrmD7weWKDzHm/9+x4kyou3TsMOg99oc+0bfYTDhNi8VXO2A4zs7wBkyB6b15tURU2eT0aS3CJYjFGR6LRWzfcsZ5BzitruEIjN+SeHc17EKqO0YlhR3T0Pc1cO5uD69/WY=')
-        sleep(3)
+        sleep(1)
         press('enter')
         self.status = None
+        sleep(1)
+        self.wait_element('static/site_work.png', 240, region=(0,0,150,150))
 
     def record_for_visa(self):
-        click(locateCenterOnScreen('static/select_record_category.png'))
         sleep(1)
-        pyautogui.screenshot('my_screenshot.png')
+        pyautogui.screenshot(str(datetime.now()).split('.')[0] +'.png')
         self.status = None
         if input('>') == 'q':
             self.status = self.STOP
@@ -167,30 +252,35 @@ class Find_visa:
                 if self.status == self.STOP:
                     break
                 elif self.status == self.ENTER_ADDRESS:
-                        print(datetime.now(), 'Ввод адреса сайта.', self.address, file=self.log)
+                        self.logging('Ввод адреса сайта.' + self.address)
                         self.enter_address()
-                        print(datetime.now(), 'Адрес сайта введён.', file=self.log)
+                        self.logging('Адрес сайта введён.')
                 elif self.status == self.NOT_WORK:
-                        print(datetime.now(), 'Сайт ожидает очереди.', file=self.log)
+                        self.logging('Сайт ожидает очереди.')
                         self.wait_site_work()
-                        print(datetime.now(), 'Очередь подошла.', file=self.log)
+                        self.logging('Очередь подошла.')
                 elif self.status == self.AUTORIZATION:
-                        print(datetime.now(), 'Авторизация.', file=self.log)
+                        self.logging('Авторизация.')
                         self.autorization()
-                        print(datetime.now(), 'Конец авторизации.', file=self.log)
+                        self.logging('Конец авторизации.')
                 elif self.status == self.FIND_VISA:
-                        print(datetime.now(), 'Начало поиска визового центра со свободными местами.', file=self.log)
-                        self.find_visa()
-                        print(datetime.now(), 'Конец поиска визового центра со свободными местами.', file=self.log)
+                        self.logging('Начало поиска визового центра со свободными местами.')
+                        self.find_visa((3,4,5,6,7,8,9,10,11,12,13))
+                        self.logging('Конец поиска визового центра со свободными местами.')
                 elif self.status == self.SELECT_FIND_VISA:
-                        print(datetime.now(), 'Выбор меню поиска визового центра.', file=self.log)
+                        self.logging('Выбор меню поиска визового центра.')
                         self.select_find_visa()
-                        print(datetime.now(), 'Выбрано меню поиска визового центра.', file=self.log)
+                        self.logging('Выбрано меню поиска визового центра.')
                 elif self.status == self.THERE_ARE_PLACES:
-                    print(datetime.now(), 'Есть свободные места. Начало записи на подачу документов.', file=self.log)
+                    self.logging('Есть свободные места. Начало записи на подачу документов.')
                     playsound.playsound('signal-gorna-na-obed.mp3')
                     self.send_email()
                     self.record_for_visa()
+                elif self.status == self.SCROLL_AUTORIZATION:
+                    self.logging('Скроллинг вниз и авторизация.')
+
+                    self.autorization()
+                    self.logging('Конец авторизации.')
 
 
 def split_image(image_name, num):
@@ -208,5 +298,5 @@ try:
     fv.run()
 except Exception as e:
     playsound.playsound('signal-gorna-na-obed.mp3')
-    print(e)
+    fv.logging(e)
 
