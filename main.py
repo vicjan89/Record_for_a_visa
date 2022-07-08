@@ -101,7 +101,7 @@ class Find_visa:
                 if coords:
                     click(coords)  # нажимаем на визовый центр
                 self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
-                if self.check_text('Нет доступных мест', 1):
+                if self.check_text('Нет доступных мест', 10):
                     self.logging('Нет мест в центре ' + str(i))
                 else:
                     self.logging('Пробую выбрать категорию визы')
@@ -120,7 +120,7 @@ class Find_visa:
                         self.logging('Выбираю визу D по карте поляка.')
                         click(locateCenterOnScreen('static/next.png'))
                         self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
-                        if self.check_text('Нет доступных мест', 1):
+                        if self.check_text('Нет доступных мест', 10):
                             self.logging('Нет мест в центре ' + str(i))
                         else:
                             self.status = self.THERE_ARE_PLACES
@@ -138,7 +138,7 @@ class Find_visa:
                         self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
                         click(locateCenterOnScreen('static/next.png'))
                         self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
-                        if self.check_text('Нет доступных мест', 1):
+                        if self.check_text('Нет доступных мест', 10):
                             self.logging('Нет мест в центре ' + str(i))
                         else:
                             self.status = self.THERE_ARE_PLACES
@@ -156,7 +156,7 @@ class Find_visa:
                         self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
                         click(locateCenterOnScreen('static/next.png'))
                         self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
-                        if self.check_text('Нет доступных мест', 1):
+                        if self.check_text('Нет доступных мест', 10):
                             self.logging('Нет мест в центре ' + str(i))
                         else:
                             if self.check_text('доступных мест нет', 10):
