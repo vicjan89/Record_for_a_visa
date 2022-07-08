@@ -10,7 +10,7 @@ import os
 from tqdm import tqdm
 from dotenv import load_dotenv
 
-ADDRESS = 'https://row2.vfsglobal.com/PolandBelarus-Appointment/Account/RegisteredLogin?q=shSA0YnE4pLF9Xzwon/x/ASnHZRMROGDyz5YljrTPrmD7weWKDzHm/9+x4kyou3TsMOg99oc+0bfYTDhNi8VXO2A4zs7wBkyB6b15tURU2eT0aS3CJYjFGR6LRWzfcsZ5BzitruEIjN+SeHc17EKqO0YlhR3T0Pc1cO5uD69/WY='
+ADDRESS = 'https://row2.vfsglobal.com/PolandBelarus-Appointment/Account/RegisteredLogin'
 pyautogui.FAILSAFE = True
 
 class Find_visa:
@@ -227,7 +227,7 @@ class Find_visa:
         self.status = None
 
     def enter_address(self):
-        click(472, 62, clicks=3)
+        pyautogui.hotkey('ctrl', 'l')
         pyperclip.copy(self.address)
         pyautogui.hotkey('ctrl', 'v')
         pyperclip.copy('')
