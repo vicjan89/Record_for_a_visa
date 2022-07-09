@@ -10,7 +10,7 @@ import os
 from tqdm import tqdm
 from dotenv import load_dotenv
 
-ADDRESS = 'https://row2.vfsglobal.com/PolandBelarus-Appointment/Account/RegisteredLogin'
+ADDRESS = 'https://row2.vfsglobal.com/PolandBelarus-Appointment/Account/RegisteredLogin?q=shSA0YnE4pLF9Xzwon/x/ASnHZRMROGDyz5YljrTPrmD7weWKDzHm/9+x4kyou3TsMOg99oc+0bfYTDhNi8VXO2A4zs7wBkyB6b15tURU2eT0aS3CJYjFGR6LRWzfcsZ5BzitruEIjN+SeHc17EKqO0YlhR3T0Pc1cO5uD69/WY='
 pyautogui.FAILSAFE = True
 
 class Find_visa:
@@ -36,11 +36,14 @@ class Find_visa:
         '''Ожидание появления на экране элемента element. Если за time_wait секунд не появился то возвращает None'''
         coords = None
         start = datetime.now()
-        while not coords:
-            coords = locateCenterOnScreen(element, region=region)
-            if (datetime.now() - start) > timedelta(seconds=time_wait):
-                break
-        return coords
+        if isinstance(element, str):
+            element = (element,)
+        while (datetime.now() - start) < timedelta(seconds=time_wait):
+            for i in element:
+                coords = locateCenterOnScreen(i, region=region)
+                if coords:
+                    return coords
+        return None
 
     @staticmethod
     def check_text(text, time_wait):
@@ -162,7 +165,10 @@ class Find_visa:
                             if self.check_text('доступных мест нет', 10):
                                 self.logging('Нет мест в центре ' + str(i))
                             else:
-                                self.status = self.THERE_ARE_PLACES
+                                if self.check_text('Sorry, looks like you were going too fast.', 5):
+                                    self.status = self.ENTER_ADDRESS
+                                else:
+                                    self.status = self.THERE_ARE_PLACES
                                 run = False
                                 break
                 click(locateCenterOnScreen('static/next.png'))
@@ -189,6 +195,8 @@ class Find_visa:
                     self.status = self.SELECT_FIND_VISA
                     break
                 elif 'Назначить дату подачи документов' in s:
+                    if 'Ваша учетная запись заблокирована' in s:
+                        sleep(130)
                     self.logging('Нажимаем капчу')
                     self.status = self.AUTORIZATION
                     break
@@ -203,7 +211,7 @@ class Find_visa:
 
     def autorization(self):
         self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
-        coords = self.wait_element('static/capcha.png', 10, region=(350, 450, 200, 200))
+        coords = self.wait_element(('static/capcha.png', 'static/capcha2.png'), 10, region=(350, 450, 200, 200))
         if coords:
             click(coords)
         sleep(5)
@@ -239,7 +247,7 @@ class Find_visa:
 
     def record_for_visa(self):
         sleep(1)
-        pyautogui.screenshot(str(datetime.now()).split('.')[0] +'.png')
+        pyautogui.screenshot(str(datetime.now()).split('.')[0].replace(':', '-') +'.png')
         self.status = None
         if input('>') == 'q':
             self.status = self.STOP
@@ -275,11 +283,10 @@ class Find_visa:
                 elif self.status == self.THERE_ARE_PLACES:
                     self.logging('Есть свободные места. Начало записи на подачу документов.')
                     playsound.playsound('signal-gorna-na-obed.mp3')
-                    self.send_email()
+                    # self.send_email()
                     self.record_for_visa()
                 elif self.status == self.SCROLL_AUTORIZATION:
                     self.logging('Скроллинг вниз и авторизация.')
-
                     self.autorization()
                     self.logging('Конец авторизации.')
 
