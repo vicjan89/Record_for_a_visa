@@ -303,6 +303,7 @@ def split_image(image_name, num):
 
 try:
     fv = Find_visa('Coordinates', ADDRESS)
+    print('Версия 0.01')
     fv.run()
 except Exception as e:
     playsound.playsound('signal-gorna-na-obed.mp3')
