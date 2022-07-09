@@ -181,7 +181,7 @@ class Find_visa:
         self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
         if self.status == None:
             start = datetime.now()
-            while (datetime.now() - start) < timedelta(seconds=30):
+            while (datetime.now() - start) < timedelta(seconds=10):
                 click(50,200)
                 hotkey('ctrl', 'a')
                 hotkey('ctrl', 'c')
@@ -235,7 +235,7 @@ class Find_visa:
         self.status = None
 
     def enter_address(self):
-        pyautogui.hotkey('ctrl', 'l')
+        pyautogui.hotkey('alt', 'd')
         pyperclip.copy(self.address)
         pyautogui.hotkey('ctrl', 'v')
         pyperclip.copy('')
@@ -303,7 +303,7 @@ def split_image(image_name, num):
 
 try:
     fv = Find_visa('Coordinates', ADDRESS)
-    print('Версия 0.01')
+    print('Версия 0.02')
     fv.run()
 except Exception as e:
     playsound.playsound('signal-gorna-na-obed.mp3')
