@@ -48,12 +48,12 @@ class Find_visa:
     def check_text(text, time_wait):
         start = datetime.now()
         while (datetime.now() - start) < timedelta(seconds=time_wait):
-            click(50,200)
+            click(50,300)
             hotkey('ctrl', 'a')
             sleep(1)
             hotkey('ctrl', 'c')
             s = pyperclip.paste()
-            click(50, 200)
+            click(50, 300)
             if text in s:
                 return True
         return False
@@ -129,7 +129,7 @@ class Find_visa:
                             self.status = self.THERE_ARE_PLACES
                             run = False
                             break
-                    click(50,200)
+                    click(50,300)
                     coords = self.wait_element('static/category_record.png', 5, region=(400, 420, 300, 230))
                     if coords:
                         click(coords.x + 300, coords.y)
@@ -147,7 +147,7 @@ class Find_visa:
                             self.status = self.THERE_ARE_PLACES
                             run = False
                             break
-                    click(50, 200)
+                    click(50, 300)
                     coords = self.wait_element('static/category_record.png', 5, region=(400, 420, 300, 230))
                     if coords:
                         click(coords.x + 300, coords.y)
@@ -182,7 +182,7 @@ class Find_visa:
         if self.status == None:
             start = datetime.now()
             while (datetime.now() - start) < timedelta(seconds=10):
-                click(50,200)
+                click(50,300)
                 hotkey('ctrl', 'a')
                 sleep(1)
                 hotkey('ctrl', 'c')
@@ -208,7 +208,7 @@ class Find_visa:
                     self.status = self.SCROLL_AUTORIZATION
             else:
                 self.status = self.ENTER_ADDRESS
-            click(50, 200)
+            click(50, 300)
 
     def autorization(self):
         self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
@@ -304,7 +304,7 @@ def split_image(image_name, num):
 
 try:
     fv = Find_visa('Coordinates', ADDRESS)
-    print('Версия 0.03')
+    print('Версия 0.04')
     fv.run()
 except Exception as e:
     playsound.playsound('signal-gorna-na-obed.mp3')
