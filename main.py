@@ -1,5 +1,5 @@
-from pyautogui import click, hotkey, locateOnScreen, locateCenterOnScreen, typewrite, press, moveTo
 import pyautogui
+from pyautogui import click, hotkey, screenshot, locateCenterOnScreen, typewrite, press, moveTo
 import pyperclip
 from PIL import Image
 import playsound
@@ -24,7 +24,7 @@ class Find_visa:
     STOP = 7
     SCROLL_AUTORIZATION = 8
 
-    LOG = 'my.log'
+    LOG = 'log/my.log'
 
     def __init__(self, name_file, address):
         self.name_file = name_file
@@ -34,7 +34,6 @@ class Find_visa:
     @staticmethod
     def wait_element(element, time_wait, region=None):
         '''Ожидание появления на экране элемента element. Если за time_wait секунд не появился то возвращает None'''
-        coords = None
         start = datetime.now()
         if isinstance(element, str):
             element = (element,)
@@ -51,6 +50,7 @@ class Find_visa:
         while (datetime.now() - start) < timedelta(seconds=time_wait):
             click(50,200)
             hotkey('ctrl', 'a')
+            sleep(1)
             hotkey('ctrl', 'c')
             s = pyperclip.paste()
             click(50, 200)
@@ -184,6 +184,7 @@ class Find_visa:
             while (datetime.now() - start) < timedelta(seconds=10):
                 click(50,200)
                 hotkey('ctrl', 'a')
+                sleep(1)
                 hotkey('ctrl', 'c')
                 s = pyperclip.paste()
                 if 'Выбрать город' in s:
@@ -235,9 +236,9 @@ class Find_visa:
         self.status = None
 
     def enter_address(self):
-        pyautogui.hotkey('alt', 'd')
+        hotkey('alt', 'd')
         pyperclip.copy(self.address)
-        pyautogui.hotkey('ctrl', 'v')
+        hotkey('ctrl', 'v')
         pyperclip.copy('')
         sleep(1)
         press('enter')
@@ -247,7 +248,7 @@ class Find_visa:
 
     def record_for_visa(self):
         sleep(1)
-        pyautogui.screenshot(str(datetime.now()).split('.')[0].replace(':', '-') +'.png')
+        screenshot('log/' + str(datetime.now()).split('.')[0].replace(':', '-') +'.png')
         self.status = None
         if input('>') == 'q':
             self.status = self.STOP
@@ -303,7 +304,7 @@ def split_image(image_name, num):
 
 try:
     fv = Find_visa('Coordinates', ADDRESS)
-    print('Версия 0.02')
+    print('Версия 0.03')
     fv.run()
 except Exception as e:
     playsound.playsound('signal-gorna-na-obed.mp3')
