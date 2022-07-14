@@ -56,8 +56,9 @@ class Find_visa:
         return False
 
     def logging(self, text):
-        print(datetime.now(), text)
-        print(datetime.now(), text, file=self.log)
+        pass
+        # print(datetime.now(), text)
+        # print(datetime.now(), text, file=self.log)
 
     def send_email(self):
         load_dotenv('config.env')
@@ -256,40 +257,40 @@ class Find_visa:
 
     def run(self):
         sleep(5)
-        with open('log/my.log', 'a', encoding='utf-8') as self.log:
-            run = True
-            while run:
-                self.check_status()
-                if self.status == self.STOP:
-                    break
-                elif self.status == self.ENTER_ADDRESS:
-                        self.logging('Ввод адреса сайта.' + self.address)
-                        self.enter_address()
-                        self.logging('Адрес сайта введён.')
-                elif self.status == self.NOT_WORK:
-                        self.logging('Сайт ожидает очереди.')
-                        self.wait_site_work()
-                        self.logging('Очередь подошла.')
-                elif self.status == self.AUTORIZATION:
-                        self.logging('Авторизация.')
-                        self.autorization()
-                        self.logging('Конец авторизации.')
-                elif self.status == self.FIND_VISA:
-                        self.logging('Начало поиска визового центра со свободными местами.')
-                        self.find_visa((3,4,5,6,7,8,9,10,11,12,13))
-                        self.logging('Конец поиска визового центра со свободными местами.')
-                elif self.status == self.SELECT_FIND_VISA:
-                        self.logging('Выбор меню поиска визового центра.')
-                        self.select_find_visa()
-                        self.logging('Выбрано меню поиска визового центра.')
-                elif self.status == self.THERE_ARE_PLACES:
-                    self.logging('Есть свободные места. Начало записи на подачу документов.')
-                    # self.send_email()
-                    self.record_for_visa()
-                elif self.status == self.SCROLL_AUTORIZATION:
-                    self.logging('Скроллинг вниз и авторизация.')
-                    self.scroll_autorization()
+        # with open('log/my.log', 'a', encoding='utf-8') as self.log:
+        run = True
+        while run:
+            self.check_status()
+            if self.status == self.STOP:
+                break
+            elif self.status == self.ENTER_ADDRESS:
+                    self.logging('Ввод адреса сайта.' + self.address)
+                    self.enter_address()
+                    self.logging('Адрес сайта введён.')
+            elif self.status == self.NOT_WORK:
+                    self.logging('Сайт ожидает очереди.')
+                    self.wait_site_work()
+                    self.logging('Очередь подошла.')
+            elif self.status == self.AUTORIZATION:
+                    self.logging('Авторизация.')
+                    self.autorization()
                     self.logging('Конец авторизации.')
+            elif self.status == self.FIND_VISA:
+                    self.logging('Начало поиска визового центра со свободными местами.')
+                    self.find_visa((3,4,5,6,7,8,9,10,11,12,13))
+                    self.logging('Конец поиска визового центра со свободными местами.')
+            elif self.status == self.SELECT_FIND_VISA:
+                    self.logging('Выбор меню поиска визового центра.')
+                    self.select_find_visa()
+                    self.logging('Выбрано меню поиска визового центра.')
+            elif self.status == self.THERE_ARE_PLACES:
+                self.logging('Есть свободные места. Начало записи на подачу документов.')
+                # self.send_email()
+                self.record_for_visa()
+            elif self.status == self.SCROLL_AUTORIZATION:
+                self.logging('Скроллинг вниз и авторизация.')
+                self.scroll_autorization()
+                self.logging('Конец авторизации.')
 
 
 def split_image(image_name, num):
@@ -304,7 +305,7 @@ def split_image(image_name, num):
 
 try:
     fv = Find_visa('Coordinates', ADDRESS)
-    print('Версия 0.05')
+    print('Версия 0.06')
     fv.run()
 except Exception as e:
     fv.logging(e)
