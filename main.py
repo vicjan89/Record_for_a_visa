@@ -1,7 +1,8 @@
 import pyautogui
-from pyautogui import click, hotkey, screenshot, locateCenterOnScreen, press, moveTo, scroll
+from pyautogui import click, hotkey, screenshot, locateCenterOnScreen, typewrite, press, moveTo
 import pyperclip
 from PIL import Image
+import playsound
 from time import sleep
 from datetime import datetime, timedelta
 import smtplib
@@ -22,6 +23,8 @@ class Find_visa:
     THERE_ARE_PLACES = 6
     STOP = 7
     SCROLL_AUTORIZATION = 8
+
+    LOG = 'log/my.log'
 
     def __init__(self, name_file, address):
         self.name_file = name_file
@@ -56,9 +59,8 @@ class Find_visa:
         return False
 
     def logging(self, text):
-        pass
-        # print(datetime.now(), text)
-        # print(datetime.now(), text, file=self.log)
+        print(datetime.now(), text)
+        print(datetime.now(), text, file=self.log)
 
     def send_email(self):
         load_dotenv('config.env')
@@ -172,7 +174,7 @@ class Find_visa:
                 click(locateCenterOnScreen('static/next.png'))
                 self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
             if run:
-                for _ in tqdm(range(400)):
+                for i in tqdm(range(400)):
                     sleep(1)
 
     def check_status(self):
@@ -209,6 +211,7 @@ class Find_visa:
             click(50, 300)
 
     def autorization(self):
+        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
         coords = self.wait_element(('static/capcha.png', 'static/capcha2.png'), 10, region=(350, 450, 200, 200))
         if coords:
             click(coords)
@@ -217,11 +220,6 @@ class Find_visa:
         sleep(5)
         self.status = None
         self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
-
-    def scroll_autorization(self):
-        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
-        scroll(-20)
-        click(locateCenterOnScreen('static/next_white.png'))
 
     def select_find_visa(self):
         self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
@@ -257,40 +255,41 @@ class Find_visa:
 
     def run(self):
         sleep(5)
-        # with open('log/my.log', 'a', encoding='utf-8') as self.log:
-        run = True
-        while run:
-            self.check_status()
-            if self.status == self.STOP:
-                break
-            elif self.status == self.ENTER_ADDRESS:
-                    self.logging('Ввод адреса сайта.' + self.address)
-                    self.enter_address()
-                    self.logging('Адрес сайта введён.')
-            elif self.status == self.NOT_WORK:
-                    self.logging('Сайт ожидает очереди.')
-                    self.wait_site_work()
-                    self.logging('Очередь подошла.')
-            elif self.status == self.AUTORIZATION:
-                    self.logging('Авторизация.')
+        with open(self.LOG, 'a', encoding='utf-8') as self.log:
+            run = True
+            while run:
+                self.check_status()
+                if self.status == self.STOP:
+                    break
+                elif self.status == self.ENTER_ADDRESS:
+                        self.logging('Ввод адреса сайта.' + self.address)
+                        self.enter_address()
+                        self.logging('Адрес сайта введён.')
+                elif self.status == self.NOT_WORK:
+                        self.logging('Сайт ожидает очереди.')
+                        self.wait_site_work()
+                        self.logging('Очередь подошла.')
+                elif self.status == self.AUTORIZATION:
+                        self.logging('Авторизация.')
+                        self.autorization()
+                        self.logging('Конец авторизации.')
+                elif self.status == self.FIND_VISA:
+                        self.logging('Начало поиска визового центра со свободными местами.')
+                        self.find_visa((3,4,5,6,7,8,9,10,11,12,13))
+                        self.logging('Конец поиска визового центра со свободными местами.')
+                elif self.status == self.SELECT_FIND_VISA:
+                        self.logging('Выбор меню поиска визового центра.')
+                        self.select_find_visa()
+                        self.logging('Выбрано меню поиска визового центра.')
+                elif self.status == self.THERE_ARE_PLACES:
+                    self.logging('Есть свободные места. Начало записи на подачу документов.')
+                    playsound.playsound('signal-gorna-na-obed.mp3')
+                    # self.send_email()
+                    self.record_for_visa()
+                elif self.status == self.SCROLL_AUTORIZATION:
+                    self.logging('Скроллинг вниз и авторизация.')
                     self.autorization()
                     self.logging('Конец авторизации.')
-            elif self.status == self.FIND_VISA:
-                    self.logging('Начало поиска визового центра со свободными местами.')
-                    self.find_visa((3,4,5,6,7,8,9,10,11,12,13))
-                    self.logging('Конец поиска визового центра со свободными местами.')
-            elif self.status == self.SELECT_FIND_VISA:
-                    self.logging('Выбор меню поиска визового центра.')
-                    self.select_find_visa()
-                    self.logging('Выбрано меню поиска визового центра.')
-            elif self.status == self.THERE_ARE_PLACES:
-                self.logging('Есть свободные места. Начало записи на подачу документов.')
-                # self.send_email()
-                self.record_for_visa()
-            elif self.status == self.SCROLL_AUTORIZATION:
-                self.logging('Скроллинг вниз и авторизация.')
-                self.scroll_autorization()
-                self.logging('Конец авторизации.')
 
 
 def split_image(image_name, num):
@@ -305,8 +304,9 @@ def split_image(image_name, num):
 
 try:
     fv = Find_visa('Coordinates', ADDRESS)
-    print('Версия 0.06')
+    print('Версия 0.04')
     fv.run()
 except Exception as e:
+    playsound.playsound('signal-gorna-na-obed.mp3')
     fv.logging(e)
 

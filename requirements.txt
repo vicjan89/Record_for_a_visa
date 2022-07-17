@@ -1,5 +1,4 @@
 pyautogui
 pyperclip
 playsound
-dotenv
 pillow
