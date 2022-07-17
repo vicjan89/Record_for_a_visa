@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import smtplib
 import os
 from tqdm import tqdm
-from dotenv import load_dotenv
+
 
 ADDRESS = 'https://row2.vfsglobal.com/PolandBelarus-Appointment/Account/RegisteredLogin?q=shSA0YnE4pLF9Xzwon/x/ASnHZRMROGDyz5YljrTPrmD7weWKDzHm/9+x4kyou3TsMOg99oc+0bfYTDhNi8VXO2A4zs7wBkyB6b15tURU2eT0aS3CJYjFGR6LRWzfcsZ5BzitruEIjN+SeHc17EKqO0YlhR3T0Pc1cO5uD69/WY='
 pyautogui.FAILSAFE = True
@@ -23,7 +23,7 @@ class Find_visa:
     STOP = 7
     SCROLL_AUTORIZATION = 8
 
-    def __init__(self, name_file, address):
+    def __init__(self, address):
         self.name_file = name_file
         self.status = None
         self.address = address
@@ -304,7 +304,7 @@ def split_image(image_name, num):
         name += 1
 
 try:
-    fv = Find_visa('Coordinates', ADDRESS)
+    fv = Find_visa(ADDRESS)
     print('Версия 0.06')
     fv.run()
 except Exception as e:
