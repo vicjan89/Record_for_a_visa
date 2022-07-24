@@ -1,11 +1,12 @@
 import pyautogui
-from pyautogui import click, hotkey, screenshot, locateCenterOnScreen, press, moveTo, scroll
+from pyautogui import click, hotkey, screenshot, locateCenterOnScreen, typewrite, press, moveTo
 import pyperclip
 from PIL import Image
+# import playsound
 from time import sleep
 from datetime import datetime, timedelta
-import smtplib
-import os
+# import smtplib
+# import os
 from tqdm import tqdm
 
 
@@ -23,8 +24,9 @@ class Find_visa:
     STOP = 7
     SCROLL_AUTORIZATION = 8
 
+    LOG = 'log/my.log'
+
     def __init__(self, address):
-        self.name_file = name_file
         self.status = None
         self.address = address
 
@@ -60,17 +62,17 @@ class Find_visa:
         # print(datetime.now(), text)
         # print(datetime.now(), text, file=self.log)
 
-    def send_email(self):
-        load_dotenv('config.env')
-        EMAIL_FROM = os.getenv('EMAIL_FROM')
-        PASSWORD_FROM = os.getenv('PASSWORD_FROM')
-        EMAIL_TO = os.getenv('EMAIL_TO')
-        if EMAIL_FROM and PASSWORD_FROM and EMAIL_TO:
-            smtpObj = smtplib.SMTP('smtp.gmail.com', 587)
-            smtpObj.starttls()
-            smtpObj.login(EMAIL_FROM, PASSWORD_FROM)
-            smtpObj.sendmail(EMAIL_FROM, EMAIL_TO, 'Hooray! There are places for a visa!')
-            smtpObj.quit()
+    # def send_email(self):
+    #     load_dotenv('config.env')
+    #     EMAIL_FROM = os.getenv('EMAIL_FROM')
+    #     PASSWORD_FROM = os.getenv('PASSWORD_FROM')
+    #     EMAIL_TO = os.getenv('EMAIL_TO')
+    #     if EMAIL_FROM and PASSWORD_FROM and EMAIL_TO:
+    #         smtpObj = smtplib.SMTP('smtp.gmail.com', 587)
+    #         smtpObj.starttls()
+    #         smtpObj.login(EMAIL_FROM, PASSWORD_FROM)
+    #         smtpObj.sendmail(EMAIL_FROM, EMAIL_TO, 'Hooray! There are places for a visa!')
+    #         smtpObj.quit()
 
     def wait_site_work(self):
         sleep(5)
@@ -172,7 +174,7 @@ class Find_visa:
                 click(locateCenterOnScreen('static/next.png'))
                 self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
             if run:
-                for _ in tqdm(range(400)):
+                for i in tqdm(range(400)):
                     sleep(1)
 
     def check_status(self):
@@ -209,6 +211,7 @@ class Find_visa:
             click(50, 300)
 
     def autorization(self):
+        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
         coords = self.wait_element(('static/capcha.png', 'static/capcha2.png'), 10, region=(350, 450, 200, 200))
         if coords:
             click(coords)
@@ -217,11 +220,6 @@ class Find_visa:
         sleep(5)
         self.status = None
         self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
-
-    def scroll_autorization(self):
-        self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
-        scroll(-20)
-        click(locateCenterOnScreen('static/next_white.png'))
 
     def select_find_visa(self):
         self.wait_element('static/site_work.png', 120, region=(0, 0, 150, 150))
@@ -257,7 +255,6 @@ class Find_visa:
 
     def run(self):
         sleep(5)
-        # with open('log/my.log', 'a', encoding='utf-8') as self.log:
         run = True
         while run:
             self.check_status()
@@ -285,28 +282,17 @@ class Find_visa:
                     self.logging('Выбрано меню поиска визового центра.')
             elif self.status == self.THERE_ARE_PLACES:
                 self.logging('Есть свободные места. Начало записи на подачу документов.')
+                playsound.playsound('signal-gorna-na-obed.mp3')
                 # self.send_email()
                 self.record_for_visa()
             elif self.status == self.SCROLL_AUTORIZATION:
                 self.logging('Скроллинг вниз и авторизация.')
-                self.scroll_autorization()
+                self.autorization()
                 self.logging('Конец авторизации.')
 
+fv = Find_visa(ADDRESS)
+print('Версия 0.05 master')
+fv.run()
 
-def split_image(image_name, num):
-    image = Image.open(image_name)
-    size_image = image.size
-    step = int(size_image[1]/num)
-    name = 1
-    for i in range(0, size_image[1], step):
-        image_new = image.crop((0,i,size_image[0],i+step))
-        image_new.save('static/' + str(name) + '.png')
-        name += 1
 
-try:
-    fv = Find_visa(ADDRESS)
-    print('Версия 0.06')
-    fv.run()
-except Exception as e:
-    fv.logging(e)
 
